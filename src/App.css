@@ -19,7 +19,7 @@ body {
 
 #root {
   background-color: var(--swatch-primary);
-  font-family: serif;
+  font-family: 'Tangerine', serif;
   position: absolute;
   width: 80%;
   left: 10%;
@@ -109,16 +109,10 @@ body {
 }
 
 .list-card, .selected-list-card, .unselected-list-card {
-  font-size: 18pt;
+  font-size: 32pt;
   margin: 10px;
   padding: 20px;
   border-radius: 25px;
-}
-
-.unselected-list-card:hover {
-  cursor: pointer;
-  background-color: var(--swatch-contrast);
-  color:white;
 }
 
 .selected-list-card {
@@ -130,14 +124,20 @@ body {
   background-color: var(--swatch-complement);
 }
 
+.unselected-list-card:hover {
+  cursor: pointer;
+  background-color: var(--swatch-contrast);
+  color:white;
+}
+
 .list-card-button {
   float:right;
-  font-size:18pt;
+  font-size:24pt;
 }
 
 .playlister-button, .playlister-button-disabled {
   font-size:36pt;
-  border-width: 0px;
+  border-width: 1px;
   float:left;
   color: black;
   cursor: pointer;
