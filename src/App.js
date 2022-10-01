@@ -10,6 +10,7 @@ import MoveSong_Transaction from './transactions/MoveSong_Transaction.js';
 
 // THESE REACT COMPONENTS ARE MODALS
 import DeleteListModal from './components/DeleteListModal.js';
+import RemoveSongModal from './components/RemoveSongModal.js';
 
 // THESE REACT COMPONENTS ARE IN OUR UI
 import Banner from './components/Banner.js';
@@ -18,11 +19,10 @@ import PlaylistCards from './components/PlaylistCards.js';
 import SidebarHeading from './components/SidebarHeading.js';
 import SidebarList from './components/SidebarList.js';
 import Statusbar from './components/Statusbar.js';
-
+import SongCard from './components/SongCard';
 class App extends React.Component {
     constructor(props) {
         super(props);
-
         // THIS IS OUR TRANSACTION PROCESSING SYSTEM
         this.tps = new jsTPS();
 
@@ -34,6 +34,7 @@ class App extends React.Component {
 
         // SETUP THE INITIAL STATE
         this.state = {
+            songIdKeyPair: null,
             listKeyPairMarkedForDeletion : null,
             currentList : null,
             sessionData : loadedSessionData
@@ -206,6 +207,75 @@ class App extends React.Component {
     getPlaylistSize = () => {
         return this.state.currentList.songs.length;
     }
+
+    // THIS FUNCTION BEGINS THE PROCESS OF CREATING A NEW SONG
+    addNewSong = () => {
+        // MAKE THE NEW SONG
+        let newSong = {
+            title: "Untitled", 
+            artist: "Unknown", 
+            youTubeId: "dQw4w9WgXcQ"
+        };
+
+        this.state.currentList.songs.push(newSong);
+        this.setState(prevState => ({
+            listKeyPairMarkedForDeletion : prevState.listKeyPairMarkedForDeletion,
+        }), () => {
+            // PUTTING THIS NEW LIST IN PERMANENT STORAGE
+            // IS AN AFTER EFFECT
+            this.db.mutationUpdateList(this.state.currentList);
+
+            // SO IS STORING OUR SESSION DATA
+            this.db.mutationUpdateSessionData(this.state.sessionData);
+        });
+    }
+
+    // THIS FUNCTION BEGINS THE PROCESS OF REMOVING A SONG
+    removeSong = (id) => {
+        if (id >= 0 && this.state.currentList) {
+            let currentList = this.state.currentList;
+            currentList.songs.splice(id,1);
+        }
+
+        // // AND FROM OUR APP STATE
+        this.setState(prevState => ({
+            songIdKeyPair: null,
+        }), () => {
+            // DELETING THE LIST FROM PERMANENT STORAGE
+            // IS AN AFTER EFFECT
+            this.db.mutationUpdateList(this.state.currentList);
+
+            // SO IS STORING OUR SESSION DATA
+            this.db.mutationUpdateSessionData(this.state.sessionData);
+        });
+        console.log(this.state.currentList.songs);
+        this.setStateWithUpdatedList(this.state.currentList);
+    }
+    removeMarkedSong = () => {
+        this.removeSong(this.state.songIdKeyPair.id);
+        this.hideRemoveSongModal();
+    }
+    markSongForRemoval = (songIdKeyPair) => {
+        this.setState(prevState => ({
+            currentList: prevState.currentList,
+            songIdKeyPair: songIdKeyPair,
+        }), () => {
+            this.showRemoveSongModal();
+            console.log(this.state.currentList.songs);
+        });
+    }
+    // THIS FUNCTION SHOWS THE MODAL FOR PROMPTING THE USER
+    // TO SEE IF THEY REALLY WANT TO REMOVE THE SONG
+    showRemoveSongModal() {
+        let modal = document.getElementById("remove-song-modal");
+        modal.classList.add("is-visible");
+    }
+    // THIS FUNCTION IS FOR HIDING THE MODAL
+    hideRemoveSongModal() {
+        let modal = document.getElementById("remove-song-modal");
+        modal.classList.remove("is-visible");
+    }
+    
     // THIS FUNCTION MOVES A SONG IN THE CURRENT LIST FROM
     // start TO end AND ADJUSTS ALL OTHER ITEMS ACCORDINGLY
     moveSong(start, end) {
@@ -274,13 +344,15 @@ class App extends React.Component {
         let modal = document.getElementById("delete-list-modal");
         modal.classList.remove("is-visible");
     }
+
     render() {
         let canAddSong = this.state.currentList !== null;
         let canUndo = this.tps.hasTransactionToUndo();
         let canRedo = this.tps.hasTransactionToRedo();
         let canClose = this.state.currentList !== null;
+
         return (
-            <div id="root">
+            <div id="root-main">
                 <Banner />
                 <SidebarHeading
                     createNewListCallback={this.createNewList}
@@ -297,19 +369,28 @@ class App extends React.Component {
                     canUndo={canUndo}
                     canRedo={canRedo}
                     canClose={canClose} 
+                    addSongCallback={this.addNewSong}
                     undoCallback={this.undo}
                     redoCallback={this.redo}
                     closeCallback={this.closeCurrentList}
                 />
                 <PlaylistCards
                     currentList={this.state.currentList}
-                    moveSongCallback={this.addMoveSongTransaction} />
+                    moveSongCallback={this.addMoveSongTransaction} 
+                    markRemoveSongCallback={this.markSongForRemoval}
+                />
                 <Statusbar 
                     currentList={this.state.currentList} />
                 <DeleteListModal
                     listKeyPair={this.state.listKeyPairMarkedForDeletion}
                     hideDeleteListModalCallback={this.hideDeleteListModal}
                     deleteListCallback={this.deleteMarkedList}
+                />
+                <RemoveSongModal
+                    songIdKeyPair={this.state.songIdKeyPair}
+                    currentList={this.state.currentList}
+                    removeSongCallback={this.removeMarkedSong}
+                    hideRemoveSongModalCallback={this.hideRemoveSongModal}
                 />
             </div>
         );

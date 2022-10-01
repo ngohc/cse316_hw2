@@ -5,6 +5,7 @@ export default class SongCard extends React.Component {
         super(props);
 
         this.state = {
+            songMarkedForRemoval: this.getRemoveSongIndex(),
             isDragging: false,
             draggedTo: false
         }
@@ -54,16 +55,31 @@ export default class SongCard extends React.Component {
         this.props.moveCallback(sourceId, targetId);
     }
 
+    handldeSongRemoval = (event) => {
+        let songIndex = Number.parseInt(event.target.id.split("-")[2]);
+
+        let songIdKeyPair = {
+            id : songIndex - 1,
+            song : this.props.song
+        }
+        this.props.markRemoveSongCallback(songIdKeyPair);
+    }
     getItemNum = () => {
         return this.props.id.substring("playlist-song-".length);
     }
-
+    getRemoveSongIndex = () => {
+        return this.songToRemoveIndex;
+    }
+    // give the id of song to remove
+    setRemoveSongIndex(initIndex) {
+        this.songToRemoveIndex = initIndex;
+    }
     render() {
         const { song } = this.props;
         let num = this.getItemNum();
         let youtubeLink = "https://www.youtube.com/watch?v=" + song.youTubeId;
         console.log("num: " + num);
-        let itemClass = "playlister-song";
+        let itemClass = "unselected-list-card";
         if (this.state.draggedTo) {
             itemClass = "playlister-song-dragged-to";
         }
@@ -78,14 +94,18 @@ export default class SongCard extends React.Component {
                 onDrop={this.handleDrop}
                 draggable="true"
             >
-                <a href={youtubeLink}>{num}.{song.title} by {song.artist}</a>
+                {num}.{" "}
+                <a href={youtubeLink}>{song.title} by {song.artist}</a>
                 <input
                     type="button"
-                    id={"delete-list-" + num}
+                    id={"delete-song-" + num}
                     className="list-card-button"
-                    onClick={this.handleDeleteList}
-                    value={"X"} />
+                    onClick={this.handldeSongRemoval}
+                    value={"X"} 
+                />
             </div>
+            
         )
     }
 }
+
